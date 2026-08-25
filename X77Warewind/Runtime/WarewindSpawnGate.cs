@@ -92,19 +92,61 @@ namespace Warewind
             _hasPendingAim = false;
         }
 
+        // unitName SyncVar is initial-only — stamp definition on shared shell BEFORE Instantiate.
+        private static Missile? _stampMissile;
+        private static UnitDefinition? _stampSavedDef;
+
+        internal static bool BeginPrefabStamp(GameObject? prefab)
+        {
+            EndPrefabStamp();
+            MissileDefinition? ours = WarewindBootstrap.Definition;
+            if (prefab == null || ours == null)
+                return false;
+            Missile? m = prefab.GetComponent<Missile>() ?? prefab.GetComponentInChildren<Missile>(true);
+            if (m == null)
+                return false;
+            _stampMissile = m;
+            _stampSavedDef = m.definition;
+            m.definition = ours;
+            return true;
+        }
+
+        internal static void EndPrefabStamp()
+        {
+            if (_stampMissile != null && _stampSavedDef != null)
+                _stampMissile.definition = _stampSavedDef;
+            _stampMissile = null;
+            _stampSavedDef = null;
+        }
+
+        /// <summary>Kill feed / PersistentUnit snapshot — keep in sync with live round.</summary>
+        internal static void ApplyDisplayIdentity(Missile missile)
+        {
+            if (missile == null)
+                return;
+            MissileDefinition? def = WarewindBootstrap.Definition;
+            if (def != null)
+                missile.definition = def;
+            missile.NetworkunitName = WarewindConstants.UnitName;
+            missile.unitName = WarewindConstants.UnitName;
+            if (!UnitRegistry.TryGetPersistentUnit(missile.persistentID, out PersistentUnit pu) || pu == null)
+                return;
+            pu.unitName = WarewindConstants.UnitName;
+            if (def != null)
+                pu.definition = def;
+        }
+
         internal static void Claim(Missile missile, Unit? fireTarget)
         {
             if (missile == null)
                 return;
 
-            if (WarewindBootstrap.Definition != null)
-                missile.definition = WarewindBootstrap.Definition;
+            ApplyDisplayIdentity(missile);
             if (WarewindBootstrap.Info != null)
                 InfoField?.SetValue(missile, WarewindBootstrap.Info);
 
             if (missile.GetComponent<WarewindTag>() == null)
                 missile.gameObject.AddComponent<WarewindTag>();
-            missile.NetworkunitName = WarewindConstants.UnitName;
             missile.SetThrottle(0f);
             WarewindMotors.Apply(missile);
             WarewindShellPrep.Apply(missile);

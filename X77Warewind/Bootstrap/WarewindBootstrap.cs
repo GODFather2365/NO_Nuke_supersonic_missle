@@ -42,6 +42,7 @@ namespace Warewind
                 WarewindMotorFx.CaptureTbm(enc);
                 WarewindMotorTrails.CaptureAam(enc);
                 WarewindBlast.CaptureTbm(enc);
+                WarewindSurvivability.Cache(enc);
                 WarewindCalcProxy.Init(enc);
 
                 MissileDefinition? aam = ResolveAam(enc);

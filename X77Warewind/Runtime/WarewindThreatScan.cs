@@ -16,21 +16,30 @@ namespace Warewind
         private static readonly FieldInfo? SeekerTarget =
             typeof(MissileSeeker).GetField("targetUnit", BindingFlags.Instance | BindingFlags.NonPublic);
 
-        internal static bool TryFind(Missile self, out Missile threat, out WarewindThreatKind kind)
+        /// <summary>
+        /// One pass: radar lock stays on <paramref name="preferRadar"/> while valid;
+        /// IR is picked independently so flares are not blocked by a closer SAM.
+        /// </summary>
+        internal static void Scan(Missile self, Missile? preferRadar, out Missile? radar, out Missile? ir)
         {
-            threat = null!;
-            kind = WarewindThreatKind.None;
+            radar = null;
+            ir = null;
             if (self == null)
-                return false;
+                return;
+
+            // Sticky lock: keep jamming even if closing geometry flickers for a frame.
+            if (preferRadar != null && IsStickyRadar(self, preferRadar))
+                radar = preferRadar;
 
             System.Collections.Generic.List<Unit> units = UnitRegistry.allUnits;
             if (units == null)
-                return false;
+                return;
 
             PersistentID id = self.persistentID;
-            Missile? best = null;
-            WarewindThreatKind bestKind = WarewindThreatKind.None;
-            float bestD = float.MaxValue;
+            Missile? bestRadar = null;
+            Missile? bestIr = null;
+            float bestRadarD = float.MaxValue;
+            float bestIrD = float.MaxValue;
 
             for (int i = 0; i < units.Count; i++)
             {
@@ -42,39 +51,72 @@ namespace Warewind
                     continue;
 
                 float d = (m.transform.position - self.transform.position).sqrMagnitude;
-                if (d >= bestD)
-                    continue;
-                bestD = d;
-                best = m;
-                bestKind = k;
+                if (k == WarewindThreatKind.Radar)
+                {
+                    if (d < bestRadarD)
+                    {
+                        bestRadarD = d;
+                        bestRadar = m;
+                    }
+                }
+                else if (k == WarewindThreatKind.Ir && d < bestIrD)
+                {
+                    bestIrD = d;
+                    bestIr = m;
+                }
             }
 
-            if (best == null)
+            if (radar == null)
+                radar = bestRadar;
+            ir = bestIr;
+        }
+
+        /// <summary>Keep existing jam lock while seeker lives — no IsClosing / nose gate.</summary>
+        internal static bool IsStickyRadar(Missile self, Missile inbound)
+        {
+            if (self == null || inbound == null || inbound.disabled)
                 return false;
-            threat = best;
-            kind = bestKind;
-            return true;
+            if (!IsHostile(self, inbound))
+                return false;
+            if (inbound.GetComponent<ARHSeeker>() == null && inbound.GetComponent<SARHSeeker>() == null)
+                return false;
+            float dist = (inbound.transform.position - self.transform.position).magnitude;
+            return dist <= WarewindConstants.ThreatDetectRangeM;
         }
 
         private static bool TryClassify(Missile self, Missile inbound, PersistentID selfId, out WarewindThreatKind kind)
         {
             kind = WarewindThreatKind.None;
-            if (!IsClosing(self, inbound))
-                return false;
 
             bool locked = (selfId.IsValid && inbound.targetID.IsValid && inbound.targetID == selfId)
                             || GetSeekerTarget(inbound) == self;
 
+            Vector3 toSelf = self.transform.position - inbound.transform.position;
+            float dist = toSelf.magnitude;
+            if (dist > WarewindConstants.ThreatDetectRangeM)
+                return false;
+            // Close-in: still track locked seekers (was dropping jam under 30 m).
+            if (dist < 30f && !locked)
+                return false;
+
             if (inbound.GetComponent<ARHSeeker>() != null || inbound.GetComponent<SARHSeeker>() != null)
             {
                 kind = WarewindThreatKind.Radar;
-                return locked || NoseToward(self, inbound);
+                if (locked)
+                    return true;
+                if (!IsClosing(inbound, toSelf, dist))
+                    return false;
+                return NoseToward(inbound, toSelf);
             }
 
             if (inbound.GetComponent<IRSeeker>() != null)
             {
                 kind = WarewindThreatKind.Ir;
-                return locked || NoseToward(self, inbound);
+                if (locked)
+                    return true;
+                if (!IsClosing(inbound, toSelf, dist))
+                    return false;
+                return NoseToward(inbound, toSelf);
             }
 
             return false;
@@ -87,12 +129,10 @@ namespace Warewind
             return true;
         }
 
-        private static bool IsClosing(Missile self, Missile inbound)
+        private static bool IsClosing(Missile inbound, Vector3 toSelf, float dist)
         {
-            Vector3 toSelf = self.transform.position - inbound.transform.position;
-            float dist = toSelf.magnitude;
-            if (dist > WarewindConstants.ThreatDetectRangeM || dist < 30f)
-                return false;
+            if (dist < 0.01f)
+                return true;
 
             Vector3 vel = inbound.rb != null && inbound.rb.velocity.sqrMagnitude > 100f
                 ? inbound.rb.velocity
@@ -104,9 +144,8 @@ namespace Warewind
             return Vector3.Dot(vel.normalized, toN) >= WarewindConstants.ThreatClosingDotMin;
         }
 
-        private static bool NoseToward(Missile self, Missile inbound)
+        private static bool NoseToward(Missile inbound, Vector3 toSelf)
         {
-            Vector3 toSelf = self.transform.position - inbound.transform.position;
             if (toSelf.sqrMagnitude < 1f)
                 return true;
             return Vector3.Angle(inbound.transform.forward, toSelf) <= WarewindConstants.ThreatAimConeDeg;

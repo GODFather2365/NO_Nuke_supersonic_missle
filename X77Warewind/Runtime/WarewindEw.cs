@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Warewind
 {
-    /// <summary>Directed jam — capacitor + direct seeker jamAccumulation inject.</summary>
+    /// <summary>Directed jam — one radar lock, 5s CD after drop, capacitor + seeker inject.</summary>
     internal static class WarewindEw
     {
         private static readonly FieldInfo? PowerField =
@@ -90,17 +90,36 @@ namespace Warewind
             EnsureAntenna(self, flight);
 
             float dt = Time.fixedDeltaTime;
+            float now = Time.timeSinceLevelLoad;
             if (self.EngineOn())
                 flight.Capacitor = Mathf.Min(WarewindConstants.CapacitorMax, flight.Capacitor + WarewindConstants.CapacitorRegenPerS * dt);
 
-            if (!WarewindThreatScan.TryFind(self, out Missile threat, out WarewindThreatKind kind))
-                return;
+            // Destroyed lock still spends CD — Unity fake-null would otherwise skip the drop.
+            if (flight.JamEngaged && flight.JamTarget == null)
+                DropJamLock(flight, now);
 
-            if (kind == WarewindThreatKind.Ir)
-            {
+            WarewindThreatScan.Scan(self, flight.JamTarget, out Missile? radar, out Missile? ir);
+
+            if (ir != null)
                 WarewindFlares.DumpOnThreat(self, flight, Vector3.Distance(self.transform.position, flight.LastKnownPos));
-                return;
+
+            // Sticky: Scan keeps preferRadar via IsStickyRadar — only drop when truly gone.
+            if (flight.JamEngaged && (radar == null || radar != flight.JamTarget))
+                DropJamLock(flight, now);
+
+            if (!flight.JamEngaged)
+            {
+                if (now - flight.LastJamTime < WarewindConstants.JamCooldownS)
+                    return;
+                if (radar == null)
+                    return;
+                flight.JamTarget = radar;
+                flight.JamEngaged = true;
             }
+
+            Missile? threat = flight.JamTarget;
+            if (threat == null)
+                return;
 
             Transform? antenna = flight.EwDummy;
             Vector3 to = threat.transform.position - (antenna != null ? antenna.position : self.transform.position);
@@ -120,12 +139,19 @@ namespace Warewind
 
             WarewindJamInject.Pulse(threat, self, frameJam);
 
-            if (Time.timeSinceLevelLoad - _lastLog > 2f)
+            if (now - _lastLog > 2f)
             {
-                _lastLog = Time.timeSinceLevelLoad;
+                _lastLog = now;
                 WarewindPlugin.ModLog?.LogInfo(
                     $"Warewind jam {threat.name} dist={dist:F0}m j/s={frameJam / dt:F2} cap={flight.Capacitor:F0}");
             }
+        }
+
+        private static void DropJamLock(WarewindFlight flight, float now)
+        {
+            flight.JamEngaged = false;
+            flight.JamTarget = null;
+            flight.LastJamTime = now;
         }
 
         private static void SlewAntenna(Transform antenna, Vector3 toThreat, float dt)

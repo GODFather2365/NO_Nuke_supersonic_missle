@@ -61,8 +61,10 @@ namespace Warewind.Patches
     [HarmonyPatch(typeof(Spawner), nameof(Spawner.SpawnMissile), new[] { typeof(GameObject), typeof(Vector3), typeof(Quaternion), typeof(Vector3), typeof(Unit), typeof(Unit) })]
     internal static class WarewindSpawnMissileGoPatch
     {
-        private static void Prefix(out bool __state)
+        private static void Prefix(GameObject missile, out bool __state)
         {
+            if (WarewindSpawnGate.IsOurFlyPrefab(missile) && WarewindSpawnGate.Pending > 0)
+                WarewindSpawnGate.BeginPrefabStamp(missile);
             __state = WarewindSpawnGate.TryBegin();
         }
 
@@ -70,6 +72,7 @@ namespace Warewind.Patches
         {
             try
             {
+                WarewindSpawnGate.EndPrefabStamp();
                 if (__result == null)
                     return;
                 bool rescue = !__state && WarewindSpawnGate.ShouldRescueClaim(missile);
@@ -84,6 +87,7 @@ namespace Warewind.Patches
             }
             finally
             {
+                WarewindSpawnGate.EndPrefabStamp();
                 if (__state)
                     WarewindSpawnGate.End();
             }
@@ -95,22 +99,30 @@ namespace Warewind.Patches
     {
         private static void Prefix(MissileDefinition missile, out bool __state)
         {
-            __state = missile != null &&
-                      string.Equals(missile.jsonKey, WarewindConstants.MissileJsonKey, System.StringComparison.Ordinal);
-            if (__state)
-                WarewindSpawnGate.InFlight = true;
+            if (missile == null)
+            {
+                __state = false;
+                return;
+            }
+            __state = string.Equals(missile.jsonKey, WarewindConstants.MissileJsonKey, System.StringComparison.Ordinal);
+            if (!__state)
+                return;
+            WarewindSpawnGate.InFlight = true;
+            WarewindSpawnGate.BeginPrefabStamp(missile.unitPrefab);
         }
 
         private static void Postfix(bool __state, Unit target, Missile __result)
         {
             try
             {
+                WarewindSpawnGate.EndPrefabStamp();
                 if (!__state || __result == null)
                     return;
                 WarewindSpawnGate.Claim(__result, target);
             }
             finally
             {
+                WarewindSpawnGate.EndPrefabStamp();
                 if (__state)
                     WarewindSpawnGate.End();
             }
@@ -122,24 +134,31 @@ namespace Warewind.Patches
     {
         private static void Prefix(MissileDefinition missile, out bool __state)
         {
-            __state = missile != null &&
-                      string.Equals(missile.jsonKey, WarewindConstants.MissileJsonKey, System.StringComparison.Ordinal);
-            if (__state)
-                WarewindSpawnGate.InFlight = true;
+            if (missile == null)
+            {
+                __state = false;
+                return;
+            }
+            __state = string.Equals(missile.jsonKey, WarewindConstants.MissileJsonKey, System.StringComparison.Ordinal);
+            if (!__state)
+                return;
+            WarewindSpawnGate.InFlight = true;
+            WarewindSpawnGate.BeginPrefabStamp(missile.unitPrefab);
         }
 
         private static void Postfix(bool __state, Missile __result)
         {
             try
             {
+                WarewindSpawnGate.EndPrefabStamp();
                 if (!__state || __result == null)
                     return;
                 NobpContent.TryLoad();
                 WarewindSpawnGate.Claim(__result, null);
-                __result.NetworkunitName = WarewindConstants.UnitName;
             }
             finally
             {
+                WarewindSpawnGate.EndPrefabStamp();
                 if (__state)
                     WarewindSpawnGate.End();
             }

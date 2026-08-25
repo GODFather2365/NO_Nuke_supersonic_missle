@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.1] - 2026-08-25
+
+### Fixed
+
+- Kill feed / HQ identity: stamp Warewind definition on shared AAM2 shell before Instantiation; re-apply on `UnitRegistry.RegisterUnit`
+- Spawn prefab stamp gated around `Spawner.SpawnMissile` so pending Fire cannot leak AAM-36 visuals
+
+### Changed
+
+- Survivability: copy armor / hitpoints from vanilla Piledriver TBM (`BallisticMissile1`) instead of hardcoded body values
+- EW jam: sticky single radar lock, independent IR flare path, **5 s cooldown** after lock drop
+- Threat scan: prefer sticky radar lock; IR scanned separately so flares are not blocked by a closer SAM
+
 ## [1.0.1] - 2026-08-22
 
 ### Fixed

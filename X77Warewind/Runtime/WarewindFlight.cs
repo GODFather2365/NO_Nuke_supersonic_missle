@@ -28,6 +28,8 @@ namespace Warewind
         internal float LastFlareTime = -100f;
         internal float Capacitor = WarewindConstants.CapacitorMax;
         internal float LastJamTime = -100f;
+        internal bool JamEngaged;
+        internal Missile? JamTarget;
         internal float LastSamTime = -100f;
         internal Vector3 SamAim;
         internal bool Armed;

@@ -3,7 +3,10 @@ using UnityEngine;
 
 namespace Warewind
 {
-    /// <summary>Hypersonic body — stop API/prox one-shots; bullets use ArmorPenetrate vs pierceArmor.</summary>
+    /// <summary>
+    /// Durability from vanilla Piledriver TBM (BallisticMissile1).
+    /// Impact still ignored — shared AAM2 shell detonates on any impactDamage.
+    /// </summary>
     internal static class WarewindSurvivability
     {
         private static readonly FieldInfo? Hitpoints =
@@ -11,35 +14,61 @@ namespace Warewind
         private static readonly FieldInfo? Armor =
             typeof(Missile).GetField("armorProperties", BindingFlags.Instance | BindingFlags.NonPublic);
 
+        private static float _hp = 100f;
+        private static float _armorTier;
+        private static float _pierce;
+        private static float _blast;
+        private static float _fire;
+        private static float _pierceTol = 1f;
+        private static float _blastTol = 1f;
+        private static float _fireTol = 1f;
+        private static bool _cached;
+
+        internal static void Cache(Encyclopedia enc)
+        {
+            _cached = false;
+            MissileDefinition? tbm = FindTbm(enc);
+            if (tbm == null)
+            {
+                WarewindPlugin.ModLog?.LogWarning("Warewind: no BallisticMissile1 — using vanilla 100 HP.");
+                return;
+            }
+
+            _armorTier = tbm.armorTier;
+            Missile? mis = tbm.unitPrefab != null ? tbm.unitPrefab.GetComponent<Missile>() : null;
+            if (mis == null && tbm.unitPrefab != null)
+                mis = tbm.unitPrefab.GetComponentInChildren<Missile>(true);
+
+            if (mis != null)
+            {
+                if (Hitpoints?.GetValue(mis) is float hp && hp > 0.01f)
+                    _hp = hp;
+                if (Armor?.GetValue(mis) is ArmorProperties ap)
+                    CopyArmor(ap);
+            }
+
+            _cached = true;
+            WarewindPlugin.ModLog?.LogInfo(
+                $"Warewind TBM armor from '{tbm.jsonKey}' hp={_hp:F0} tier={_armorTier:F1} pierce={_pierce:F0}/{_pierceTol:F1}");
+        }
+
         internal static void ApplyDefinition(MissileDefinition? def)
         {
             if (def == null)
                 return;
-            def.armorTier = WarewindConstants.BodyArmorTier;
+            def.armorTier = _armorTier;
         }
 
         internal static void Apply(Missile missile)
         {
             if (missile == null)
                 return;
-
             if (missile.definition is MissileDefinition md)
-                md.armorTier = WarewindConstants.BodyArmorTier;
-
-            SetHp(missile, WarewindConstants.BodyHitpoints);
-
-            if (Armor?.GetValue(missile) is ArmorProperties ap)
-            {
-                ap.pierceArmor = WarewindConstants.BodyPierceArmor;
-                ap.blastArmor = WarewindConstants.BodyBlastArmor;
-                ap.fireArmor = WarewindConstants.BodyFireArmor;
-                ap.pierceTolerance = WarewindConstants.BodyPierceTolerance;
-                ap.blastTolerance = WarewindConstants.BodyBlastTolerance;
-                ap.fireTolerance = WarewindConstants.BodyFireTolerance;
-            }
+                md.armorTier = _armorTier;
+            StampArmor(missile);
+            SetHp(missile, _hp);
         }
 
-        /// <summary>Vanilla TakeDamage impact branch = instant Detonate — never use it.</summary>
         internal static bool ProcessDamage(
             Missile missile,
             float pierceDamage,
@@ -51,7 +80,7 @@ namespace Warewind
             if (missile == null || missile.disabled)
                 return true;
 
-            Apply(missile);
+            StampArmor(missile);
 
             if (dealerId == missile.persistentID || dealerId == missile.ownerID || dealerId.NotValid)
                 return true;
@@ -63,7 +92,7 @@ namespace Warewind
             float p = Mathf.Max(pierceDamage - ap.pierceArmor, 0f) / Mathf.Max(ap.pierceTolerance, 0.1f);
             float b = Mathf.Max(blastDamage - ap.blastArmor, 0f) * amountAffected / Mathf.Max(ap.blastTolerance, 0.1f);
             float f = Mathf.Max(fireDamage - ap.fireArmor, 0f) / Mathf.Max(ap.fireTolerance, 0.1f);
-            float loss = (p + b + f) * WarewindConstants.IncomingDamageScale;
+            float loss = p + b + f;
             if (loss <= 0.001f)
                 return true;
 
@@ -92,11 +121,61 @@ namespace Warewind
             return true;
         }
 
-        internal static float GetHp(Missile missile)
+        private static void StampArmor(Missile missile)
+        {
+            if (!_cached || Armor?.GetValue(missile) is not ArmorProperties ap)
+                return;
+            ap.pierceArmor = _pierce;
+            ap.blastArmor = _blast;
+            ap.fireArmor = _fire;
+            ap.pierceTolerance = _pierceTol;
+            ap.blastTolerance = _blastTol;
+            ap.fireTolerance = _fireTol;
+        }
+
+        private static void CopyArmor(ArmorProperties ap)
+        {
+            _pierce = ap.pierceArmor;
+            _blast = ap.blastArmor;
+            _fire = ap.fireArmor;
+            _pierceTol = ap.pierceTolerance;
+            _blastTol = ap.blastTolerance;
+            _fireTol = ap.fireTolerance;
+        }
+
+        private static MissileDefinition? FindTbm(Encyclopedia enc)
+        {
+            if (enc?.missiles == null)
+                return null;
+            MissileDefinition? best = null;
+            int score = -1;
+            for (int i = 0; i < enc.missiles.Count; i++)
+            {
+                MissileDefinition? m = enc.missiles[i];
+                if (m == null || string.IsNullOrEmpty(m.jsonKey) || m.unitPrefab == null)
+                    continue;
+                string k = m.jsonKey;
+                int s = 0;
+                if (k.Equals("BallisticMissile1", System.StringComparison.OrdinalIgnoreCase))
+                    s = 100;
+                else if (k.StartsWith("BallisticMissile1", System.StringComparison.OrdinalIgnoreCase))
+                    s = 80;
+                else if (k.IndexOf("BallisticMissile", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    s = 40;
+                if (s > score)
+                {
+                    score = s;
+                    best = m;
+                }
+            }
+            return best;
+        }
+
+        private static float GetHp(Missile missile)
         {
             if (Hitpoints?.GetValue(missile) is float hp)
                 return hp;
-            return WarewindConstants.BodyHitpoints;
+            return _hp;
         }
 
         private static void SetHp(Missile missile, float hp)

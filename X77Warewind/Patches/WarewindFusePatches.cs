@@ -83,9 +83,7 @@ namespace Warewind.Patches
                 return true;
             // Vanilla: any impactDamage > 0 → instant Detonate (API/flak one-shot).
             WarewindSurvivability.ProcessDamage(
-                __instance, pierceDamage, blastDamage,
-                Mathf.Min(amountAffected, WarewindConstants.IncomingBlastAffectedCap),
-                fireDamage, dealerID);
+                __instance, pierceDamage, blastDamage, amountAffected, fireDamage, dealerID);
             return false;
         }
     }

@@ -201,23 +201,13 @@ namespace Warewind
         public const float CapacitorRegenPerS = 35f;
         public const float JamDrawPerS = 90f;
         public const float JamPerSecond = 5.5f;
+        public const float JamCooldownS = 5f;
         public const float JamAntennaSlewDegS = 240f;
         public const string EwAntennaName = "PlaceOfEW";
 
         public const float ThreatDetectRangeM = 55000f;
         public const float ThreatAimConeDeg = 55f;
         public const float ThreatClosingDotMin = 0.35f;
-
-        public const float BodyArmorTier = 4f;
-        public const float BodyHitpoints = 12000f;
-        public const float BodyPierceArmor = 520f;
-        public const float BodyBlastArmor = 750f;
-        public const float BodyFireArmor = 120f;
-        public const float BodyPierceTolerance = 12f;
-        public const float BodyBlastTolerance = 10f;
-        public const float BodyFireTolerance = 8f;
-        public const float IncomingDamageScale = 0.25f;
-        public const float IncomingBlastAffectedCap = 0.35f;
 
         public const float SamAvoidUntilM = 15000f;
         public const float SamMaxDetourM = 5000f;
