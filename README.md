@@ -1,6 +1,6 @@
 # X-77 Warewind
 
-[![Version](https://img.shields.io/badge/version-1.1.1-blue)](https://github.com/Mursisru/X-77-Warewind/releases)
+[![Version](https://img.shields.io/badge/version-1.1.2-blue)](https://github.com/Mursisru/X-77-Warewind/releases)
 [![BepInEx](https://img.shields.io/badge/BepInEx-5-green)](https://docs.bepinex.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 

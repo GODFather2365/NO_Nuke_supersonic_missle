@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.2] - 2026-08-27
+
+### Fixed
+
+- Aircraft RCS no longer increases when Warewind is loaded in internal bays (`hardpoint.bayDoors`); external pylons still add mount RCS as before
+
 ## [1.1.1] - 2026-08-25
 
 ### Fixed
