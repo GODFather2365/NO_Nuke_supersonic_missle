@@ -9,6 +9,7 @@ namespace Warewind
     /// </summary>
     internal static class WarewindBlast
     {
+        private const string CloneSuffix = " (X77N)";
         private static readonly FieldInfo? BlastYieldField =
             typeof(Missile).GetField("blastYield", BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly FieldInfo? WarheadField =
@@ -73,17 +74,24 @@ namespace Warewind
             if (WarheadField.GetValue(donor) is not Missile.Warhead wh)
                 return;
 
-            _air = AirEffectField?.GetValue(wh) as GameObject;
-            _armor = ArmorEffectField?.GetValue(wh) as GameObject;
-            _terrain = TerrainEffectField?.GetValue(wh) as GameObject;
-            _water = WaterSurfaceEffectField?.GetValue(wh) as GameObject;
-            _under = UnderwaterEffectField?.GetValue(wh) as GameObject;
-            _airHasShockwave = _air != null && _air.GetComponentInChildren<Shockwave>(true) != null;
-            _captured = _air != null || _armor != null || _terrain != null;
+            _air = CloneFx(AirEffectField?.GetValue(wh) as GameObject);
+            _armor = CloneFx(ArmorEffectField?.GetValue(wh) as GameObject);
+            _terrain = CloneFx(TerrainEffectField?.GetValue(wh) as GameObject);
+            _water = CloneFx(WaterSurfaceEffectField?.GetValue(wh) as GameObject);
+            _under = CloneFx(UnderwaterEffectField?.GetValue(wh) as GameObject);
 
             WarewindPlugin.ModLog?.LogInfo(
                 $"Warewind blast TBM FX air={(_air != null)} shockwave={_airHasShockwave} armor={(_armor != null)} fallbackFrag={NeedsFragFallback}");
         }
+
+        private static GameObject? CloneFx(GameObject? src)
+        {
+            if (src == null)
+                return null;
+            GameObject clone = UnityEngine.Object.Instantiate(src);
+            clone.name = src.name + CloneSuffix;
+            return clone;
+        }    
 
         internal static void Ensure(Missile missile)
         {
@@ -92,6 +100,7 @@ namespace Warewind
 
             BlastYieldField?.SetValue(missile, WarewindConstants.BlastYieldKg);
             StampWarheadFx(missile);
+            WarewindShockwaveFx.Apply(_air, WarewindConstants.BlastYieldKg);
         }
 
         private static void StampWarheadFx(Missile missile)

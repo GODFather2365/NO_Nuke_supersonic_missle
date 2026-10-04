@@ -44,7 +44,7 @@ namespace Warewind.Patches
         private static void Postfix(
             Rigidbody rb, PersistentID ownerID, Vector3 position, bool armed, float blastYield)
         {
-            if (!armed || blastYield < 200f)
+            if (!armed || blastYield < WarewindConstants.NukeYieldThresholdKg)
                 return;
             // yield>200 with no Shockwave on FX = Warhead returns without damage.
             if (!WarewindBlast.NeedsFragFallback)

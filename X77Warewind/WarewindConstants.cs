@@ -7,11 +7,14 @@ namespace Warewind
     {
         public const string MissileJsonKey = "missilepack_x77_warewind";
         public const string MountJsonKey = "MissilePack_X77_Warewind_single";
-        public const string WeaponInfoName = "X-77 Warewind";
-        public const string MountDisplayName = "X-77 Warewind";
-        public const string UnitName = "X-77 Warewind";
-        public const string ShortName = "X-77";
-        public const string BogeyName = "Warewind";
+        public const string WeaponInfoName = "X-77N Warewind (500Kt)";
+        public const string MountDisplayName = "X-77N Warewind (500Kt)";
+        public const string UnitName = "X-77N Warewind (500Kt)";
+        public const string ShortName = "X-77N";
+        public const string BogeyName = "Warewind Nuke";
+        /// <summary>Encyclopedia / mount tooltip — nuclear modification callout.</summary>
+        public const string NuclearDescription =
+        "Two-stage air-launched hypersonic with W77-class nuclear modification: 500 kt fission-fusion warhead, optical terminal guidance. Blast damage scales with yield; use at own risk.";
         public const string SeekerTypeName = "Optical";
         public const string VisualRootName = "WarewindVisual";
         public const string FlyPrefabName = "MissilePack_Warewind_Fly";
@@ -43,7 +46,15 @@ namespace Warewind
 
         public const float LaunchMassKg = 2800f;
         public const float Stage1DryMassKg = 420f;
-        public const float BlastYieldKg = 700f;
+        public const float BlastYieldKg = 500_000f * 1_000f;
+        /// <summary>Above this yield the vanilla Warhead path needs Shockwave on airEffect.</summary>
+        public const float NukeYieldThresholdKg = 200f;
+        /// <summary>FX-only scale for cloned Shockwave rings (damage uses BlastYieldKg, not this).</summary>
+        public const float ShockwaveScaleMult = 6f;
+        public const float ShockwaveMaxRadiusCapM = 3000f;
+        public const float ShockwaveMaxLifetimeS = 8f;
+        /// <summary>Nuclear rounds are single-shot: ammo per mount.</summary>
+        public const int NuclearAmmo = 1;
         public const float Cost = 44f;
         public const float RadarSize = 0.5f;
         public const float MountClearanceM = 0.05f;

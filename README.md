@@ -12,7 +12,7 @@ BepInEx plugin that adds the **X-77 Warewind** two-stage hypersonic cruise missi
 ## Features
 
 - Drop / loft / 50 km cruise / dive; solid booster + ramjet sustainer
-- Optical HUD, 700 kg HE, 2800 kg launch
+- Optical HUD, 500 kt nuclear warhead (X-77N), 2800 kg launch
 - Own flares ×50 and EW capacitor; add-only Darkreach / Alkyon HE Piledriver slots
 - Content bundle `X77Warewind.nobp` (`WarewindVisual`)
 

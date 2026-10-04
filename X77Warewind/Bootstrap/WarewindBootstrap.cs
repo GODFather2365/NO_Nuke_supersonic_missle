@@ -143,7 +143,7 @@ namespace Warewind
             PrefabFactory.CopyMapIdentity(shell, def);
             def.unitName = WarewindConstants.UnitName;
             def.bogeyName = WarewindConstants.BogeyName;
-            def.description = "Two-stage air-launched hypersonic. Solid booster, ramjet sustainer, 700kg HE, optical.";
+            def.description = WarewindConstants.NuclearDescription;
             def.value = WarewindConstants.Cost;
             def.mass = WarewindConstants.LaunchMassKg;
             def.length = LengthM;
@@ -218,6 +218,8 @@ namespace Warewind
             MountDisabled?.SetValue(mount, false);
             BindMountedInfo(mount, info);
             Info = info;
+            if (def != null)
+                def.description = WarewindConstants.NuclearDescription;
         }
 
         private static WeaponMount? CreateMount(Encyclopedia enc, MissileDefinition? def)
@@ -239,8 +241,7 @@ namespace Warewind
             mount.jsonKey = WarewindConstants.MountJsonKey;
             mount.mountName = WarewindConstants.MountDisplayName;
             PrefabFactory.CopyMountScalars(donor, mount);
-            mount.ammo = 1;
-            mount.emptyMass = WarewindConstants.MountEmptyMassKg;
+            mount.ammo = WarewindConstants.NuclearAmmo;            mount.emptyMass = WarewindConstants.MountEmptyMassKg;
             mount.mass = mount.emptyMass + WarewindConstants.LaunchMassKg;
             mount.RCS = WarewindConstants.RadarSize;
             mount.emptyRCS = 0f;
@@ -324,13 +325,13 @@ namespace Warewind
 
             info.weaponName = WarewindConstants.WeaponInfoName;
             info.shortName = WarewindConstants.ShortName;
-            info.description = "Two-stage hypersonic, optical, 700kg HE.";
+            info.description = WarewindConstants.NuclearDescription;
             info.massPerRound = WarewindConstants.LaunchMassKg;
             info.costPerRound = WarewindConstants.Cost;
             info.blastDamage = WarewindConstants.BlastYieldKg;
             info.pK = 0.7f;
             info.fireInterval = WarewindConstants.FireIntervalS;
-            info.nuclear = false;
+            info.nuclear = true;
             info.strategic = false;
             info.bomb = false;
             info.glideBomb = false;

@@ -370,7 +370,7 @@ namespace Warewind.Patches
             weaponInfo.blastDamage = WarewindConstants.BlastYieldKg;
             weaponInfo.massPerRound = WarewindConstants.LaunchMassKg;
             AircraftSelectionDisplay.SetTmp(__instance, "weaponSeeker", WarewindConstants.SeekerTypeName);
-            AircraftSelectionDisplay.SetTmp(__instance, "weaponHE", "HE: " + UnitConverter.YieldReading(WarewindConstants.BlastYieldKg));
+            AircraftSelectionDisplay.SetTmp(__instance, "weaponHE", "NUKE: " + UnitConverter.YieldReading(WarewindConstants.BlastYieldKg));
             AircraftSelectionDisplay.SetTmp(__instance, "weaponCost", "C: " + UnitConverter.ValueReading(WarewindConstants.Cost));
             AircraftSelectionDisplay.SetTmp(__instance, "weaponRCS", string.Format("RCS: {0}", WarewindConstants.RadarSize));
         }

@@ -1,6 +1,13 @@
 # Changelog
 
-## [1.1.3] - 2026-09-01
+## [1.2.0] - 2026-10-05
+### Added
+- Nuclear warhead X-77N (500 kt): BlastYieldKg 700 kg → 500_000_000 kg TNT-equivalent, info.nuclear=true, ammo per mount via NuclearAmmo=1.
+- WarewindShockwaveFx: scales cloned Shockwave rings (radius/lifetime/height) for the 500 kt blast; templates stay untouched.
+- Tuning constants: NukeYieldThresholdKg=200, ShockwaveScaleMult=6, ShockwaveMaxRadiusCapM=3000, ShockwaveMaxLifetimeS=8, NuclearAmmo=1.
+### Changed
+- Names: "X-77N Warewind (500Kt)" (WeaponInfoName/MountDisplayName/UnitName), ShortName "X-77N", BogeyName "Warewind Nuke"; nuclear description in encyclopedia/mount tooltip; HUD "HE:" → "NUKE:".
+- TBM FX slots now receive runtime clones (" (X77N)") instead of shared BallisticMissile1 template objects.
 
 ### Changed
 
