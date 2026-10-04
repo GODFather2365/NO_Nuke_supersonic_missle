@@ -30,7 +30,7 @@
       <Private>false</Private>
     </Reference>
     <Reference Include="Blueprinter">
-      <HintPath>$(BlueprinterDll)</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Nuclear Option\BepInEx\plugins\com.nikkorap.blueprinter\Blueprinter.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">

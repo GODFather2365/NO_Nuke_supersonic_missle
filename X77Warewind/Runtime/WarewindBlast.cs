@@ -79,6 +79,8 @@ namespace Warewind
             _terrain = CloneFx(TerrainEffectField?.GetValue(wh) as GameObject);
             _water = CloneFx(WaterSurfaceEffectField?.GetValue(wh) as GameObject);
             _under = CloneFx(UnderwaterEffectField?.GetValue(wh) as GameObject);
+            _airHasShockwave = _air != null && _air.GetComponentInChildren<Shockwave>(true) != null;
+            _captured = _air != null || _armor != null || _terrain != null;
 
             WarewindPlugin.ModLog?.LogInfo(
                 $"Warewind blast TBM FX air={(_air != null)} shockwave={_airHasShockwave} armor={(_armor != null)} fallbackFrag={NeedsFragFallback}");
